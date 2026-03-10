@@ -339,8 +339,7 @@ img {
 }
 
 .reviews-track {
-  display: flex;
-  gap: 0.7rem;
+  position: relative;
   overflow: hidden;
   padding-bottom: 0.35rem;
   scrollbar-width: none;
@@ -356,6 +355,12 @@ img {
 
 .reviews-track.is-dragging {
   cursor: grabbing;
+}
+
+.reviews-marquee {
+  display: flex;
+  gap: 0.7rem;
+  will-change: transform;
 }
 
 .review-card {

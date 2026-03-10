@@ -19,12 +19,18 @@ const reviewTrack = document.querySelector('.reviews-track');
 
 if (reviewTrack) {
   const originalCards = Array.from(reviewTrack.querySelectorAll('.review-card'));
+  const marquee = document.createElement('div');
+  marquee.className = 'reviews-marquee';
+  originalCards.forEach((card) => marquee.appendChild(card));
+  reviewTrack.appendChild(marquee);
+
   let setWidth = 0;
+  let offset = 0;
   let paused = false;
   let lastTime = 0;
   let isPointerDown = false;
   let pointerStartX = 0;
-  let startScrollLeft = 0;
+  let startOffset = 0;
   let resumeTimer = null;
   let animationStarted = false;
 
@@ -33,19 +39,36 @@ if (reviewTrack) {
     originalCards.forEach((card) => {
       cloneFragment.appendChild(card.cloneNode(true));
     });
-    reviewTrack.appendChild(cloneFragment);
+    marquee.appendChild(cloneFragment);
   }
 
+  const applyOffset = () => {
+    marquee.style.transform = `translate3d(${-offset}px, 0, 0)`;
+  };
+
+  const normalizeLoop = () => {
+    if (setWidth <= 0) {
+      return;
+    }
+
+    while (offset >= setWidth) {
+      offset -= setWidth;
+    }
+
+    while (offset < 0) {
+      offset += setWidth;
+    }
+  };
+
   const calcSetWidth = () => {
-    const style = window.getComputedStyle(reviewTrack);
+    const style = window.getComputedStyle(marquee);
     const gap = parseFloat(style.gap || '0') || 0;
     setWidth = originalCards.reduce((sum, card) => sum + card.getBoundingClientRect().width, 0);
     if (originalCards.length > 1) {
       setWidth += gap * (originalCards.length - 1);
     }
-    if (reviewTrack.scrollLeft >= setWidth && setWidth > 0) {
-      reviewTrack.scrollLeft -= setWidth;
-    }
+    normalizeLoop();
+    applyOffset();
   };
 
   const autoScroll = (time) => {
@@ -56,31 +79,18 @@ if (reviewTrack) {
     lastTime = time;
 
     if (!paused && setWidth > 0) {
-      reviewTrack.scrollLeft += delta * 0.03;
-      if (reviewTrack.scrollLeft >= setWidth) {
-        reviewTrack.scrollLeft -= setWidth;
-      }
+      offset += delta * 0.03;
+      normalizeLoop();
+      applyOffset();
     }
     requestAnimationFrame(autoScroll);
-  };
-
-  const normalizeLoop = () => {
-    if (setWidth <= 0) {
-      return;
-    }
-    while (reviewTrack.scrollLeft >= setWidth) {
-      reviewTrack.scrollLeft -= setWidth;
-    }
-    while (reviewTrack.scrollLeft < 0) {
-      reviewTrack.scrollLeft += setWidth;
-    }
   };
 
   reviewTrack.addEventListener('pointerdown', (event) => {
     isPointerDown = true;
     paused = true;
     pointerStartX = event.clientX;
-    startScrollLeft = reviewTrack.scrollLeft;
+    startOffset = offset;
     reviewTrack.classList.add('is-dragging');
     if (reviewTrack.setPointerCapture) {
       try {
@@ -94,8 +104,9 @@ if (reviewTrack) {
       return;
     }
     const deltaX = event.clientX - pointerStartX;
-    reviewTrack.scrollLeft = startScrollLeft - deltaX;
+    offset = startOffset - deltaX;
     normalizeLoop();
+    applyOffset();
   });
 
   const endDrag = (event) => {
@@ -124,8 +135,9 @@ if (reviewTrack) {
     }
     event.preventDefault();
     paused = true;
-    reviewTrack.scrollLeft += delta;
+    offset += delta;
     normalizeLoop();
+    applyOffset();
     clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       paused = false;
@@ -140,11 +152,13 @@ if (reviewTrack) {
     normalizeLoop();
     if (setWidth > 0) {
       animationStarted = true;
+      applyOffset();
       requestAnimationFrame(autoScroll);
     }
   };
 
-  reviewTrack.scrollLeft = 0;
+  offset = 0;
+  applyOffset();
   window.addEventListener('load', startCarousel, { once: true });
   requestAnimationFrame(startCarousel);
   window.addEventListener('resize', () => {
