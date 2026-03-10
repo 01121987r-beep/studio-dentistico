@@ -25,6 +25,7 @@ if (reviewTrack) {
   let isPointerDown = false;
   let pointerStartX = 0;
   let startScrollLeft = 0;
+  let resumeTimer = null;
 
   if (originalCards.length) {
     const cloneFragment = document.createDocumentFragment();
@@ -54,7 +55,7 @@ if (reviewTrack) {
     lastTime = time;
 
     if (!paused && setWidth > 0) {
-      reviewTrack.scrollLeft += delta * 0.045;
+      reviewTrack.scrollLeft += delta * 0.022;
       if (reviewTrack.scrollLeft >= setWidth) {
         reviewTrack.scrollLeft -= setWidth;
       }
@@ -73,21 +74,6 @@ if (reviewTrack) {
       reviewTrack.scrollLeft += setWidth;
     }
   };
-
-  reviewTrack.addEventListener('mouseenter', () => {
-    paused = true;
-  });
-  reviewTrack.addEventListener('mouseleave', () => {
-    if (!isPointerDown) {
-      paused = false;
-    }
-  });
-  reviewTrack.addEventListener('touchstart', () => {
-    paused = true;
-  }, { passive: true });
-  reviewTrack.addEventListener('touchend', () => {
-    paused = false;
-  });
 
   reviewTrack.addEventListener('pointerdown', (event) => {
     isPointerDown = true;
@@ -139,8 +125,8 @@ if (reviewTrack) {
     paused = true;
     reviewTrack.scrollLeft += delta;
     normalizeLoop();
-    clearTimeout(reviewTrack._resumeTimer);
-    reviewTrack._resumeTimer = setTimeout(() => {
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
       paused = false;
     }, 900);
   }, { passive: false });
