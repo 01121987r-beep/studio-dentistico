@@ -26,6 +26,7 @@ if (reviewTrack) {
   let pointerStartX = 0;
   let startScrollLeft = 0;
   let resumeTimer = null;
+  let animationStarted = false;
 
   if (originalCards.length) {
     const cloneFragment = document.createDocumentFragment();
@@ -55,7 +56,7 @@ if (reviewTrack) {
     lastTime = time;
 
     if (!paused && setWidth > 0) {
-      reviewTrack.scrollLeft += delta * 0.022;
+      reviewTrack.scrollLeft += delta * 0.03;
       if (reviewTrack.scrollLeft >= setWidth) {
         reviewTrack.scrollLeft -= setWidth;
       }
@@ -131,9 +132,21 @@ if (reviewTrack) {
     }, 900);
   }, { passive: false });
 
-  calcSetWidth();
+  const startCarousel = () => {
+    if (animationStarted) {
+      return;
+    }
+    calcSetWidth();
+    normalizeLoop();
+    if (setWidth > 0) {
+      animationStarted = true;
+      requestAnimationFrame(autoScroll);
+    }
+  };
+
   reviewTrack.scrollLeft = 0;
-  requestAnimationFrame(autoScroll);
+  window.addEventListener('load', startCarousel, { once: true });
+  requestAnimationFrame(startCarousel);
   window.addEventListener('resize', () => {
     calcSetWidth();
     normalizeLoop();

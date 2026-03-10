@@ -341,13 +341,13 @@ img {
 .reviews-track {
   display: flex;
   gap: 0.7rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  overflow: hidden;
   padding-bottom: 0.35rem;
   scrollbar-width: none;
   cursor: grab;
   user-select: none;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .reviews-track::-webkit-scrollbar {
@@ -356,12 +356,10 @@ img {
 
 .reviews-track.is-dragging {
   cursor: grabbing;
-  scroll-snap-type: none;
 }
 
 .review-card {
   flex: 0 0 280px;
-  scroll-snap-align: start;
   border: 1px solid #d8e8f5;
   border-radius: 16px;
   background: #fff;
