@@ -16,14 +16,15 @@ if (header && toggle) {
 }
 
 const reviewTrack = document.querySelector('.reviews-track');
-const prevBtn = document.querySelector('.carousel-btn.prev');
-const nextBtn = document.querySelector('.carousel-btn.next');
 
 if (reviewTrack) {
   const originalCards = Array.from(reviewTrack.querySelectorAll('.review-card'));
   let setWidth = 0;
   let paused = false;
   let lastTime = 0;
+  let isPointerDown = false;
+  let pointerStartX = 0;
+  let startScrollLeft = 0;
 
   if (originalCards.length) {
     const cloneFragment = document.createDocumentFragment();
@@ -61,11 +62,25 @@ if (reviewTrack) {
     requestAnimationFrame(autoScroll);
   };
 
+  const normalizeLoop = () => {
+    if (setWidth <= 0) {
+      return;
+    }
+    while (reviewTrack.scrollLeft >= setWidth) {
+      reviewTrack.scrollLeft -= setWidth;
+    }
+    while (reviewTrack.scrollLeft < 0) {
+      reviewTrack.scrollLeft += setWidth;
+    }
+  };
+
   reviewTrack.addEventListener('mouseenter', () => {
     paused = true;
   });
   reviewTrack.addEventListener('mouseleave', () => {
-    paused = false;
+    if (!isPointerDown) {
+      paused = false;
+    }
   });
   reviewTrack.addEventListener('touchstart', () => {
     paused = true;
@@ -74,21 +89,69 @@ if (reviewTrack) {
     paused = false;
   });
 
+  reviewTrack.addEventListener('pointerdown', (event) => {
+    isPointerDown = true;
+    paused = true;
+    pointerStartX = event.clientX;
+    startScrollLeft = reviewTrack.scrollLeft;
+    reviewTrack.classList.add('is-dragging');
+    if (reviewTrack.setPointerCapture) {
+      try {
+        reviewTrack.setPointerCapture(event.pointerId);
+      } catch (_error) {}
+    }
+  });
+
+  reviewTrack.addEventListener('pointermove', (event) => {
+    if (!isPointerDown) {
+      return;
+    }
+    const deltaX = event.clientX - pointerStartX;
+    reviewTrack.scrollLeft = startScrollLeft - deltaX;
+    normalizeLoop();
+  });
+
+  const endDrag = (event) => {
+    if (!isPointerDown) {
+      return;
+    }
+    isPointerDown = false;
+    reviewTrack.classList.remove('is-dragging');
+    normalizeLoop();
+    paused = false;
+    if (event && reviewTrack.releasePointerCapture) {
+      try {
+        reviewTrack.releasePointerCapture(event.pointerId);
+      } catch (_error) {}
+    }
+  };
+
+  reviewTrack.addEventListener('pointerup', endDrag);
+  reviewTrack.addEventListener('pointercancel', endDrag);
+  reviewTrack.addEventListener('lostpointercapture', endDrag);
+
+  reviewTrack.addEventListener('wheel', (event) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(delta) < 1) {
+      return;
+    }
+    event.preventDefault();
+    paused = true;
+    reviewTrack.scrollLeft += delta;
+    normalizeLoop();
+    clearTimeout(reviewTrack._resumeTimer);
+    reviewTrack._resumeTimer = setTimeout(() => {
+      paused = false;
+    }, 900);
+  }, { passive: false });
+
   calcSetWidth();
+  reviewTrack.scrollLeft = 0;
   requestAnimationFrame(autoScroll);
-  window.addEventListener('resize', calcSetWidth);
-
-  if (prevBtn && nextBtn) {
-    const slideBy = () => Math.min(320, reviewTrack.clientWidth * 0.9);
-
-    nextBtn.addEventListener('click', () => {
-      reviewTrack.scrollBy({ left: slideBy(), behavior: 'smooth' });
-    });
-
-    prevBtn.addEventListener('click', () => {
-      reviewTrack.scrollBy({ left: -slideBy(), behavior: 'smooth' });
-    });
-  }
+  window.addEventListener('resize', () => {
+    calcSetWidth();
+    normalizeLoop();
+  });
 }
 
 const form = document.querySelector('#contactForm');

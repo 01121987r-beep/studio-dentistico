@@ -345,10 +345,18 @@ img {
   scroll-snap-type: x mandatory;
   padding-bottom: 0.35rem;
   scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .reviews-track::-webkit-scrollbar {
   display: none;
+}
+
+.reviews-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
 }
 
 .review-card {
@@ -380,21 +388,6 @@ img {
   margin: 0.5rem 0 0;
   color: #475569;
   line-height: 1.6;
-}
-
-.carousel-actions {
-  margin-top: 0.6rem;
-  display: flex;
-  gap: 0.4rem;
-}
-
-.carousel-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid #cfe3f2;
-  background: #fff;
-  cursor: pointer;
 }
 
 .form-grid {
